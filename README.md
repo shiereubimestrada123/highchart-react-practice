@@ -97,6 +97,12 @@ Anything not covered by a prop goes through untouched:
 Unknown names fall through as a raw Highcharts series type, so nothing is
 locked behind the preset table.
 
+![Three cards from the gallery's Specialised section: an ARR waterfall bridge, a radar chart of team profiles, and a Sankey diagram of signup flow](docs/gallery.jpg)
+
+The Gallery page has one card per kind, grouped by the job the chart does —
+change over time, comparison, composition, relationships, specialised. Every
+card is the same component; only the props differ.
+
 ## Layout
 
 ```
