@@ -425,11 +425,6 @@ button:disabled {
   color: var(--text-secondary);
 }
 
-.check[data-disabled] {
-  color: var(--text-muted);
-  cursor: not-allowed;
-}
-
 .playground-main {
   display: flex;
   flex-direction: column;

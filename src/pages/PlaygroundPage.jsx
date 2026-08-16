@@ -41,12 +41,6 @@ export default function PlaygroundPage() {
   // than one series per motion. They read from the same table shape.
   const isCollapsed = SINGLE_SERIES_KINDS.has(kind) || kind === 'drilldown';
 
-  // A drill-down's one series is coloured per point, so a legend for it would
-  // be a single grey swatch reading "Revenue" — identity is already on the
-  // axis. The control is disabled rather than ignored, so the reason is visible.
-  const legendApplies = kind !== 'drilldown';
-  const effectiveLegend = legendApplies && legend;
-
   const chartProps = useMemo(() => {
     const active = regionRevenue.series.slice(0, seriesCount);
 
@@ -100,14 +94,14 @@ export default function PlaygroundPage() {
             : '  categories={categories}\n  series={series}',
         `  format="${format}"`,
         `  height={${height}}`,
-        effectiveLegend ? null : '  legend={false}',
+        legend ? null : '  legend={false}',
         dataLabels ? '  dataLabels' : null,
         animation ? null : '  animation={false}',
         '/>',
       ]
         .filter(Boolean)
         .join('\n'),
-    [kind, format, height, effectiveLegend, dataLabels, animation],
+    [kind, format, height, legend, dataLabels, animation],
   );
 
   return (
@@ -165,12 +159,7 @@ export default function PlaygroundPage() {
             />
           </Field>
 
-          <Check
-            label="Legend"
-            checked={effectiveLegend}
-            onChange={setLegend}
-            disabled={!legendApplies}
-          />
+          <Check label="Legend" checked={legend} onChange={setLegend} />
           <Check label="Data labels" checked={dataLabels} onChange={setDataLabels} />
           <Check label="Animation" checked={animation} onChange={setAnimation} />
 
@@ -201,7 +190,7 @@ export default function PlaygroundPage() {
               kind={kind}
               format={format}
               height={height}
-              legend={effectiveLegend}
+              legend={legend}
               dataLabels={dataLabels}
               animation={animation}
               yTitle={isCollapsed && kind !== 'drilldown' ? undefined : 'Revenue ($k)'}
@@ -226,13 +215,12 @@ function Field({ label, children }) {
   );
 }
 
-function Check({ label, checked, onChange, disabled = false }) {
+function Check({ label, checked, onChange }) {
   return (
-    <label className="check" data-disabled={disabled || undefined}>
+    <label className="check">
       <input
         type="checkbox"
         checked={checked}
-        disabled={disabled}
         onChange={(e) => onChange(e.target.checked)}
       />
       <span>{label}</span>
