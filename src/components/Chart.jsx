@@ -313,6 +313,15 @@ const Chart = forwardRef(function Chart(
     };
   }, []);
 
+  // `chart.update()` puts a drilled-down chart back on its top level visually,
+  // but leaves the drilldown module's own bookkeeping untouched —
+  // `drilldownLevels` stays at 1 and the opened id stays in `ddDupes`, which
+  // Highcharts reads as "already drilled" and silently ignores. The symptom:
+  // drill into a column, change any prop, and that column can never be opened
+  // again. Rebuilding the chart instead of updating it keeps the view and that
+  // bookkeeping in step. Only drilldown charts pay the cost.
+  const hasDrilldown = Boolean(options.drilldown?.series?.length);
+
   return (
     <div className={className} ref={containerRef} style={{ width: '100%' }}>
       <HighchartsReact
@@ -322,6 +331,7 @@ const Chart = forwardRef(function Chart(
         highcharts={Highcharts}
         constructorType={constructorType}
         options={options}
+        immutable={hasDrilldown}
         ref={chartComponentRef}
         containerProps={{ style: { width: '100%' } }}
       />

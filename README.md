@@ -108,6 +108,11 @@ The Gallery page has one card per kind, grouped by the job the chart does —
 change over time, comparison, composition, relationships, specialised. Every
 card is the same component; only the props differ.
 
+`drilldown` is a kind you click into. Points carry an id naming a series in
+`options.drilldown.series`; Highcharts supplies the breadcrumb back:
+
+![The Playground with kind=drilldown, drilled into North America: a breadcrumb reading Revenue / North America above columns for New, Expansion and Renewal, beside the generated Chart call](docs/playground-drilldown.jpg)
+
 ## Layout
 
 ```
