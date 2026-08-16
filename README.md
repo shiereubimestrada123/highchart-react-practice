@@ -12,10 +12,12 @@ npm run lint
 
 Vite 8 · React 19 · Highcharts 13 · `highcharts-react-official`.
 
-![The dashboard in dark mode: four KPI tiles with sparklines above an area chart of revenue by product line and a stacked column chart of sessions by channel](docs/dashboard-dark.jpg)
+| Light | Dark |
+|---|---|
+| ![The dashboard in light mode: four KPI tiles with sparklines above an area chart of revenue by product line and a stacked column chart of sessions by channel](docs/dashboard-light.jpg) | ![The same dashboard in dark mode, with the palette re-stepped for the dark surface](docs/dashboard-dark.jpg) |
 
-Dark mode is a *selected* palette, not an inverted one — the same eight hues,
-re-stepped for a dark surface and validated against it.
+Same charts, same slots, two palettes. Dark mode is *selected*, not inverted —
+the same eight hues re-stepped for a dark surface and validated against it.
 
 ---
 
