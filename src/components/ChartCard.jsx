@@ -1,4 +1,4 @@
-import { useId, useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useState } from 'react';
 import DataTable from './DataTable';
 import ErrorBoundary from './ErrorBoundary';
 import { ChartCardContext } from './chartCardContext';
@@ -30,6 +30,16 @@ export default function ChartCard({
     () => ({ title, registerChart: setChartApi }),
     [title],
   );
+
+  const showingTable = Boolean(showTable && table);
+
+  // Hiding the chart puts it in a display:none subtree, where ResizeObserver
+  // stops reporting — so a card that changes width while the table is up comes
+  // back at its old size and overflows. Ask for the reflow on the way back
+  // rather than relying on the observer to notice.
+  useEffect(() => {
+    if (!showingTable) chartApi?.reflow();
+  }, [showingTable, chartApi]);
 
   return (
     <section className="card" style={{ gridColumn: `span ${span}` }}>
@@ -71,11 +81,17 @@ export default function ChartCard({
 
       <div className="card-body" id={bodyId}>
         <ChartCardContext.Provider value={cardContext}>
-          {showTable && table ? (
-            <DataTable {...table} />
-          ) : (
+          {/*
+            The chart stays mounted while the table is up, hidden rather than
+            swapped out. Unmounting it would unregister it and take the CSV
+            button with it — exactly when someone is looking at the numbers and
+            most likely to want them. <Chart> skips reflow at zero size and
+            picks the layout back up when the card returns to chart view.
+          */}
+          <div hidden={showingTable}>
             <ErrorBoundary>{children}</ErrorBoundary>
-          )}
+          </div>
+          {showingTable ? <DataTable {...table} /> : null}
         </ChartCardContext.Provider>
       </div>
 

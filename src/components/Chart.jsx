@@ -346,7 +346,12 @@ const Chart = forwardRef(function Chart(
     const el = containerRef.current;
     if (!el || typeof ResizeObserver === 'undefined') return undefined;
     let frame = 0;
-    const ro = new ResizeObserver(() => {
+    const ro = new ResizeObserver((entries) => {
+      // A hidden card body can report a 0×0 box; reflowing to that would
+      // collapse the chart. Skip it — ChartCard asks for a reflow directly
+      // when it swaps the table back out.
+      const box = entries[0]?.contentRect;
+      if (box && (box.width === 0 || box.height === 0)) return;
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(() => chartComponentRef.current?.chart?.reflow());
     });
