@@ -273,6 +273,13 @@ const Chart = forwardRef(function Chart(
               }
             : {},
         },
+        // `plotOptions.series` is the weakest of the plotOptions: anything a
+        // preset sets on its own series type beats it. The donut preset turns
+        // labels off there, which would swallow `dataLabels` entirely — so when
+        // the prop asks for labels, re-assert it on the specific type too.
+        ...(dataLabels && preset.seriesType
+          ? { [preset.seriesType]: { dataLabels: { enabled: true } } }
+          : {}),
       },
       exporting: {
         enabled: exporting,

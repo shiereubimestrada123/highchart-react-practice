@@ -58,6 +58,11 @@ import Chart from './components/Chart';
 />
 ```
 
+![The Playground page: a control panel for kind, series count, value format, height, legend, data labels and animation, beside a donut chart of revenue by region and a card showing the generated Chart call](docs/playground.jpg)
+
+The Playground puts one dataset through sixteen forms and prints the call that
+rendered it — flip a control and watch the corresponding prop appear.
+
 Anything not covered by a prop goes through untouched:
 
 ```jsx
