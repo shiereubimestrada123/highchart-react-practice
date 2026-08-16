@@ -87,9 +87,10 @@ Anything not covered by a prop goes through untouched:
 | `stacking`, `inverted`, `polar` | pass-throughs |
 | `legend` | `true` / `false` / a Highcharts legend object; defaults to on for ≥ 2 series and for part-to-whole charts |
 | `dataLabels`, `sharedTooltip`, `animation`, `exporting`, `height` | display switches |
+| `filename` | names exported files; defaults to the enclosing card's title |
 | `onPointClick`, `onSeriesToggle` | event callbacks |
 | `options` | raw Highcharts options, deep-merged last |
-| `ref` | `{ chart, reflow(), exportPNG() }` |
+| `ref` | `{ chart, canExport, reflow(), exportPNG(), downloadCSV(), getCSV() }` |
 
 ### Chart kinds
 

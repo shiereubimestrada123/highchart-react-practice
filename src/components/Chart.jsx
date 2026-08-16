@@ -1,11 +1,20 @@
-import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef } from 'react';
+import {
+  forwardRef,
+  useCallback,
+  useContext,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+} from 'react';
 import HighchartsReactModule from 'highcharts-react-official';
 import Highcharts from '../highcharts/setup';
 import { getPreset } from '../highcharts/presets';
 import { useChartTheme } from '../theme/useTheme';
 import { mergeAll } from '../utils/deepMerge';
-import { getFormatter } from '../utils/format';
+import { getFormatter, slugify } from '../utils/format';
 import { CATEGORICAL } from '../highcharts/palette';
+import { ChartCardContext } from './chartCardContext';
 
 /**
  * The one reusable chart component.
@@ -132,6 +141,7 @@ const Chart = forwardRef(function Chart(
     sharedTooltip,
     dataLabels = false,
     exporting = true,
+    filename, // overrides the card title for exported files
     animation = true,
     accessibilityDescription,
     onPointClick,
@@ -143,25 +153,11 @@ const Chart = forwardRef(function Chart(
   ref,
 ) {
   const { mode, theme, chrome } = useChartTheme();
+  const { title: cardTitle, registerChart } = useContext(ChartCardContext);
   const containerRef = useRef(null);
   const chartComponentRef = useRef(null);
 
   const preset = getPreset(kind);
-
-  // Expose the raw Highcharts chart to parents (live updates, exporting, …)
-  // without handing them the whole React wrapper.
-  useImperativeHandle(
-    ref,
-    () => ({
-      get chart() {
-        return chartComponentRef.current?.chart ?? null;
-      },
-      reflow: () => chartComponentRef.current?.chart?.reflow(),
-      exportPNG: () =>
-        chartComponentRef.current?.chart?.exportChart({ type: 'image/png' }),
-    }),
-    [],
-  );
 
   const handlePointClick = useCallback(
     function pointClick(e) {
@@ -283,6 +279,13 @@ const Chart = forwardRef(function Chart(
       },
       exporting: {
         enabled: exporting,
+        // Without this every download is called "chart.csv": Highcharts derives
+        // the filename from `title.text`, which is null here because the
+        // heading lives in HTML. An explicit filename also skips Highcharts'
+        // five-character minimum, so short names like "mrr.csv" survive.
+        filename: slugify(filename ?? title ?? cardTitle) || undefined,
+        // Datetime axes otherwise export as epoch milliseconds.
+        csv: { dateFormat: '%Y-%m-%d %H:%M:%S' },
         buttons: { contextButton: { menuItems: ['viewFullscreen', 'downloadPNG', 'downloadSVG', 'downloadCSV'] } },
       },
       series: normalized,
@@ -292,9 +295,50 @@ const Chart = forwardRef(function Chart(
   }, [
     theme, chrome, mode, kind, preset, series, data, name, categories, title, subtitle,
     xTitle, yTitle, xType, yMin, yMax, format, digits, valueSuffix, stacking, inverted,
-    polar, height, legend, sharedTooltip, dataLabels, exporting, animation,
+    polar, height, legend, sharedTooltip, dataLabels, exporting, filename, cardTitle, animation,
     accessibilityDescription, onPointClick, onSeriesToggle, handlePointClick, userOptions,
   ]);
+
+  // Read from the merged options, not the `exporting` prop: the sparkline
+  // preset disables exporting in its own options, so stat tiles correctly
+  // offer no CSV button.
+  const canExport = options.exporting?.enabled !== false;
+
+  // The surface parents get — a ref, or the enclosing ChartCard. Built with
+  // useMemo rather than inline in useImperativeHandle so the *same* object can
+  // be handed to both, and so the card is not re-registered on every render.
+  const api = useMemo(
+    () => ({
+      get chart() {
+        return chartComponentRef.current?.chart ?? null;
+      },
+      canExport,
+      reflow: () => chartComponentRef.current?.chart?.reflow(),
+      exportPNG: () =>
+        chartComponentRef.current?.chart?.exportChart({ type: 'image/png' }),
+      // Highcharts 13 moved these onto `chart.exporting`; `chart.downloadCSV()`
+      // survives only as a deprecated shim, so prefer the new path.
+      downloadCSV: () => {
+        const chart = chartComponentRef.current?.chart;
+        return chart?.exporting?.downloadCSV?.() ?? chart?.downloadCSV?.();
+      },
+      getCSV: () => {
+        const chart = chartComponentRef.current?.chart;
+        return chart?.exporting?.getCSV?.() ?? chart?.getCSV?.();
+      },
+    }),
+    [canExport],
+  );
+
+  useImperativeHandle(ref, () => api, [api]);
+
+  // Let the enclosing card render its own Download CSV button. Cards holding
+  // prose rather than a chart never receive one, so they show no button.
+  useEffect(() => {
+    if (!registerChart) return undefined;
+    registerChart(api);
+    return () => registerChart(null);
+  }, [api, registerChart]);
 
   // Highcharts only listens to window resize. In a CSS grid a card can change
   // width without the window doing anything, so drive reflow off the element.

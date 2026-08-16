@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import Chart from '../components/Chart';
 import ChartCard from '../components/ChartCard';
 import { regionRevenue } from '../data/datasets';
+import { slugify } from '../utils/format';
 
 /**
  * Change the props, watch the chart change.
@@ -20,9 +21,6 @@ const KINDS = [
 ];
 
 const SINGLE_SERIES_KINDS = new Set(['pie', 'donut', 'funnel']);
-
-/** URL-safe id for a drill level, e.g. "North America" → "north-america". */
-const slug = (name) => name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
 
 const FORMATS = ['number', 'compact', 'money', 'percent'];
 
@@ -50,13 +48,13 @@ export default function PlaygroundPage() {
       const data = regionRevenue.categories.map((name, i) => ({
         name,
         y: active.reduce((sum, s) => sum + s.data[i], 0),
-        drilldown: slug(name),
+        drilldown: slugify(name),
       }));
 
       // Second level: the same region split by motion. One series per region,
       // matched to the point above it by `id`.
       const drilldownSeries = regionRevenue.categories.map((name, i) => ({
-        id: slug(name),
+        id: slugify(name),
         name,
         type: 'column',
         data: active.map((s) => [s.name, s.data[i]]),

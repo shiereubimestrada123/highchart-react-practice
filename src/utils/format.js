@@ -43,3 +43,15 @@ export const FORMATTERS = {
 export function getFormatter(name) {
   return FORMATTERS[name] || fmtNumber;
 }
+
+/**
+ * "Revenue by region" → "revenue-by-region".
+ *
+ * Used for drill-down level ids and for naming exported files, so the two
+ * cannot drift apart.
+ */
+export const slugify = (name) =>
+  String(name ?? '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');

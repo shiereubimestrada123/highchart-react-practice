@@ -1,6 +1,7 @@
-import { useId, useState } from 'react';
+import { useId, useMemo, useState } from 'react';
 import DataTable from './DataTable';
 import ErrorBoundary from './ErrorBoundary';
+import { ChartCardContext } from './chartCardContext';
 
 /**
  * The frame around a chart: heading, optional controls, a footnote, and the
@@ -8,6 +9,7 @@ import ErrorBoundary from './ErrorBoundary';
  *
  * The heading lives in HTML rather than in `chart.title` so it participates in
  * the page's document outline and is selectable/searchable like normal text.
+ * It doubles as the export filename — see chartCardContext.js.
  */
 export default function ChartCard({
   title,
@@ -19,7 +21,15 @@ export default function ChartCard({
   children,
 }) {
   const [showTable, setShowTable] = useState(false);
+  // Set by whatever <Chart> renders inside this card, if any. Cards holding
+  // prose rather than a chart simply never get one, and show no CSV button.
+  const [chartApi, setChartApi] = useState(null);
   const bodyId = useId();
+
+  const cardContext = useMemo(
+    () => ({ title, registerChart: setChartApi }),
+    [title],
+  );
 
   return (
     <section className="card" style={{ gridColumn: `span ${span}` }}>
@@ -30,6 +40,21 @@ export default function ChartCard({
         </div>
         <div className="card-actions">
           {actions}
+          {/*
+            Labelled "CSV" rather than "Download CSV": the longer text pushed
+            headings onto a second line on the narrowest cards. The accessible
+            name stays whole.
+          */}
+          {chartApi?.canExport ? (
+            <button
+              type="button"
+              className="ghost-btn"
+              aria-label={title ? `Download ${title} as CSV` : 'Download CSV'}
+              onClick={() => chartApi.downloadCSV()}
+            >
+              CSV
+            </button>
+          ) : null}
           {table ? (
             <button
               type="button"
@@ -45,11 +70,13 @@ export default function ChartCard({
       </header>
 
       <div className="card-body" id={bodyId}>
-        {showTable && table ? (
-          <DataTable {...table} />
-        ) : (
-          <ErrorBoundary>{children}</ErrorBoundary>
-        )}
+        <ChartCardContext.Provider value={cardContext}>
+          {showTable && table ? (
+            <DataTable {...table} />
+          ) : (
+            <ErrorBoundary>{children}</ErrorBoundary>
+          )}
+        </ChartCardContext.Provider>
       </div>
 
       {note ? <p className="card-note">{note}</p> : null}
