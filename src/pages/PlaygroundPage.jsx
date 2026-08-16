@@ -16,10 +16,13 @@ import { regionRevenue } from '../data/datasets';
 const KINDS = [
   'line', 'spline', 'area', 'areaspline', 'stacked-area',
   'column', 'stacked-column', 'percent-column', 'bar', 'stacked-bar',
-  'radar', 'streamgraph', 'pie', 'donut', 'funnel',
+  'radar', 'streamgraph', 'pie', 'donut', 'funnel', 'drilldown',
 ];
 
 const SINGLE_SERIES_KINDS = new Set(['pie', 'donut', 'funnel']);
+
+/** URL-safe id for a drill level, e.g. "North America" → "north-america". */
+const slug = (name) => name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
 
 const FORMATS = ['number', 'compact', 'money', 'percent'];
 
@@ -34,8 +37,42 @@ export default function PlaygroundPage() {
   const [height, setHeight] = useState(360);
   const [animation, setAnimation] = useState(true);
 
+  // Kinds whose data gets collapsed into one series of named points, rather
+  // than one series per motion. They read from the same table shape.
+  const isCollapsed = SINGLE_SERIES_KINDS.has(kind) || kind === 'drilldown';
+
+  // A drill-down's one series is coloured per point, so a legend for it would
+  // be a single grey swatch reading "Revenue" — identity is already on the
+  // axis. The control is disabled rather than ignored, so the reason is visible.
+  const legendApplies = kind !== 'drilldown';
+  const effectiveLegend = legendApplies && legend;
+
   const chartProps = useMemo(() => {
     const active = regionRevenue.series.slice(0, seriesCount);
+
+    if (kind === 'drilldown') {
+      // Top level: one column per region, totalled across the active motions.
+      // Each point names the drill level it opens.
+      const data = regionRevenue.categories.map((name, i) => ({
+        name,
+        y: active.reduce((sum, s) => sum + s.data[i], 0),
+        drilldown: slug(name),
+      }));
+
+      // Second level: the same region split by motion. One series per region,
+      // matched to the point above it by `id`.
+      const drilldownSeries = regionRevenue.categories.map((name, i) => ({
+        id: slug(name),
+        name,
+        type: 'column',
+        data: active.map((s) => [s.name, s.data[i]]),
+      }));
+
+      return {
+        series: [{ name: 'Revenue', data }],
+        options: { drilldown: { series: drilldownSeries } },
+      };
+    }
 
     if (SINGLE_SERIES_KINDS.has(kind)) {
       // Part-to-whole kinds want one series of named slices, so collapse the
@@ -55,19 +92,22 @@ export default function PlaygroundPage() {
       [
         '<Chart',
         `  kind="${kind}"`,
-        SINGLE_SERIES_KINDS.has(kind)
-          ? '  series={[{ name: "Revenue", data, colorByPoint: true }]}'
-          : '  categories={categories}\n  series={series}',
+        kind === 'drilldown'
+          ? '  series={[{ name: "Revenue", data }]}\n' +
+            '  options={{ drilldown: { series: drilldownSeries } }}'
+          : SINGLE_SERIES_KINDS.has(kind)
+            ? '  series={[{ name: "Revenue", data, colorByPoint: true }]}'
+            : '  categories={categories}\n  series={series}',
         `  format="${format}"`,
         `  height={${height}}`,
-        legend ? null : '  legend={false}',
+        effectiveLegend ? null : '  legend={false}',
         dataLabels ? '  dataLabels' : null,
         animation ? null : '  animation={false}',
         '/>',
       ]
         .filter(Boolean)
         .join('\n'),
-    [kind, format, height, legend, dataLabels, animation],
+    [kind, format, height, effectiveLegend, dataLabels, animation],
   );
 
   return (
@@ -75,7 +115,7 @@ export default function PlaygroundPage() {
       <div className="intro">
         <h1>Playground</h1>
         <p>
-          One dataset, fifteen forms. The generated call is under the chart — the whole
+          One dataset, sixteen forms. The generated call is under the chart — the whole
           API surface of the wrapper is visible in it.
         </p>
       </div>
@@ -125,7 +165,12 @@ export default function PlaygroundPage() {
             />
           </Field>
 
-          <Check label="Legend" checked={legend} onChange={setLegend} />
+          <Check
+            label="Legend"
+            checked={effectiveLegend}
+            onChange={setLegend}
+            disabled={!legendApplies}
+          />
           <Check label="Data labels" checked={dataLabels} onChange={setDataLabels} />
           <Check label="Animation" checked={animation} onChange={setAnimation} />
 
@@ -140,10 +185,15 @@ export default function PlaygroundPage() {
           <ChartCard
             title="Revenue by region"
             subtitle={`kind="${kind}"`}
+            note={
+              kind === 'drilldown'
+                ? 'Click a column to open that region, then use the breadcrumb to come back. The second level is the same region split by motion — the series count control decides how many motions are in it.'
+                : undefined
+            }
             table={
-              SINGLE_SERIES_KINDS.has(kind)
+              isCollapsed
                 ? { series: chartProps.series, categoryLabel: 'Region', format }
-                : { ...chartProps, format, categoryLabel: 'Region' }
+                : { categories: chartProps.categories, series: chartProps.series, format, categoryLabel: 'Region' }
             }
           >
             <Chart
@@ -151,10 +201,10 @@ export default function PlaygroundPage() {
               kind={kind}
               format={format}
               height={height}
-              legend={legend}
+              legend={effectiveLegend}
               dataLabels={dataLabels}
               animation={animation}
-              yTitle={SINGLE_SERIES_KINDS.has(kind) ? undefined : 'Revenue ($k)'}
+              yTitle={isCollapsed && kind !== 'drilldown' ? undefined : 'Revenue ($k)'}
             />
           </ChartCard>
 
@@ -176,12 +226,13 @@ function Field({ label, children }) {
   );
 }
 
-function Check({ label, checked, onChange }) {
+function Check({ label, checked, onChange, disabled = false }) {
   return (
-    <label className="check">
+    <label className="check" data-disabled={disabled || undefined}>
       <input
         type="checkbox"
         checked={checked}
+        disabled={disabled}
         onChange={(e) => onChange(e.target.checked)}
       />
       <span>{label}</span>

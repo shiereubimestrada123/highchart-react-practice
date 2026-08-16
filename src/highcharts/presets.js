@@ -38,6 +38,29 @@ export const PRESETS = {
 
   column: { seriesType: 'column', needsAxes: true },
 
+  /**
+   * Columns you can click into. The points are the entities here — one bar per
+   * thing, each carrying a `drilldown` id that names a series in
+   * `options.drilldown.series` — so they take their colour per point and the
+   * legend goes away.
+   *
+   * Drill-down keeps one chart where a dashboard would otherwise sprout five.
+   * It only pays off when the second level answers the question the first one
+   * raises; if people have to drill to get the point at all, the top level is
+   * showing the wrong thing.
+   */
+  drilldown: {
+    seriesType: 'column',
+    needsAxes: true,
+    options: () => ({
+      // Points identify themselves by name rather than by an axis category
+      // list, which is what lets a drill level swap in its own points.
+      xAxis: { type: 'category' },
+      legend: { enabled: false },
+      plotOptions: { column: { colorByPoint: true } },
+    }),
+  },
+
   'stacked-column': {
     seriesType: 'column',
     needsAxes: true,

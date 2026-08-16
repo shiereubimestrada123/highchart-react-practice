@@ -85,7 +85,7 @@ Anything not covered by a prop goes through untouched:
 `stacked-column` · `percent-column` · `bar` · `stacked-bar` · `pie` · `donut` ·
 `scatter` · `bubble` · `heatmap` · `treemap` · `gauge` · `funnel` · `radar` ·
 `streamgraph` · `sankey` · `dependencywheel` · `boxplot` · `waterfall` ·
-`sparkline` · `combo`
+`drilldown` · `sparkline` · `combo`
 
 Unknown names fall through as a raw Highcharts series type, so nothing is
 locked behind the preset table.
