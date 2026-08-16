@@ -124,6 +124,12 @@ src/
   utils/                deep merge + number formatting
 ```
 
+![The Live data page: pause, add-point and export controls above a streaming area chart of request rate with warning and critical plot bands, beside a solid gauge reading 38% of capacity](docs/live-data.jpg)
+
+The Live data page streams a point a second into a chart that was created once
+from props. The bands mark the alert thresholds, and the gauge reads the same
+number the status pill does.
+
 ## Things worth stealing
 
 - **Modules are registered in one file.** Highcharts 12+ modules are
