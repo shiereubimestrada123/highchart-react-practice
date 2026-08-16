@@ -156,7 +156,11 @@ number the status pill does.
 - **No dual-axis charts anywhere.** Two units in one frame is the most
   misread chart there is: use two charts, or index both to a common base.
 
-## Licence note
+## Licence
 
-Highcharts is free for personal and non-commercial use; a commercial project
-needs a licence from Highsoft. This repo is a practice sandbox.
+The code in this repo is MIT licensed — see [LICENSE](LICENSE).
+
+That covers this repo's own code only. **Highcharts itself is not MIT**: it is a
+commercial product, free for personal and non-commercial use, and a commercial
+project needs a licence from [Highsoft](https://shop.highcharts.com/). Cloning
+this repo does not grant you one.
